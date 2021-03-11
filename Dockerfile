@@ -20,12 +20,26 @@ RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+COPY . /var/vww
+
+
 # Create system user to run Composer and Artisan Commands
-RUN useradd -G www-data,root -u 1000 -d /home/web web
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user
+RUN useradd -G www-data,root -u 1000 -d /home/www www
+RUN mkdir -p /home/web/.composer && \
+    chown -R www:www /home/www && \
+    chown -R www:www /var/www
 
-# Set working directory
+
+
+RUN set -eux; \
+    mkdir -p storage/logs storage/framework bootstrap/cache; \
+    composer install --prefer-dist --no-progress --no-suggest --optimize-autoloader; \
+    composer clear-cache
+
+COPY docker/php-fpm/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
+
 WORKDIR /var/www
-
-USER web
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["php-fpm"]
+USER www

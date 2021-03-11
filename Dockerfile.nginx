@@ -1,5 +1,5 @@
 FROM nginx:alpine
 
 
-COPY laravel-nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/conf.f/default.conf /etc/nginx/conf.d/default.conf
 
