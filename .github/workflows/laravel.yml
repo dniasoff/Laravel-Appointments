@@ -27,6 +27,9 @@ jobs:
     needs: laravel-tests
     
     steps:
+    - name: checkout
+      uses: actions/checkout@v2
+
     - name: AWS ECR App
       uses: kciter/aws-ecr-action@v2
       with:
