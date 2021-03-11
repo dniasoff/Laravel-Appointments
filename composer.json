@@ -17,6 +17,7 @@
         "laravel/tinker": "^2.0",
         "laravel/ui": "^3.0",
         "spatie/laravel-medialibrary": "^8.7",
+        "ukfast/laravel-health-check": "^1.10",
         "yajra/laravel-datatables-oracle": "^9.6"
     },
     "require-dev": {
