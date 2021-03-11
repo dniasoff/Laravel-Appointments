@@ -2,9 +2,6 @@ version: "3.7"
 services:
   app:
     build:
-      args:
-        user: web
-        uid: 1000
       context: ./
       dockerfile: Dockerfile
     image: laravel
