@@ -48,7 +48,7 @@ jobs:
         access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         account_id: ${{ secrets.AWS_ACCOUNT_ID }}
-        repo: $cdk_laravel/nginx
+        repo: cdk_laravel/nginx
         region: ${{ secrets.AWS_REGION }}
         tags: latest,${{ github.sha }}
         create_repo: true
