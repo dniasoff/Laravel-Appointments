@@ -21,3 +21,26 @@ jobs:
     - name: Install Dependencies
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
    
+    - name: AWS ECR App
+      uses: kciter/aws-ecr-action@v2
+      with:
+        access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        repo: ${{ secrets.AWS_ECR_REPO }}
+        region: ${{ secrets.AWS_REGION }}
+        tags: latest,${{ github.sha }}
+        create_repo: true
+        dockerfile: Dockerfile
+        
+    - name: AWS ECR Nginx
+      uses: kciter/aws-ecr-action@v2
+      with:
+        access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        repo: ${{ secrets.AWS_ECR_REPO }}
+        region: ${{ secrets.AWS_REGION }}
+        tags: latest,${{ github.sha }}
+        create_repo: true
+        dockerfile: Dockerfile.nginx
