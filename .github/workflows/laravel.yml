@@ -2,9 +2,7 @@ name: Laravel
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: [ master,staging,develop ]
 
 jobs:
   laravel-tests:
@@ -29,7 +27,23 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v2
-
+    - name: Extract tag name
+      shell: bash
+      run: |
+        BRANCH=echo ${GITHUB_REF#refs/heads/}
+        if [ "$BRANCH" = "master" ]; then
+          echo "##[set-output name=tag;]$(echo "lastest")"
+        else
+          echo "##[set-output name=tag;]$(echo ${BRANCH})"
+        fi        
+      id: set_tag
+    - name: Set outputs
+      id: sha_short
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+    - name: Check outputs tag
+      run: echo ${{ steps.set_tag.outputs.tag }}
+    - name: Check outputs sha
+      run: echo ${{ steps.sha_short.outputs.sha_short }}
     - name: AWS ECR App
       uses: kciter/aws-ecr-action@v2
       with:
@@ -38,7 +52,7 @@ jobs:
         account_id: ${{ secrets.AWS_ACCOUNT_ID }}
         repo: cdk_laravel/laravel
         region: ${{ secrets.AWS_REGION }}
-        tags: latest,${{ github.sha }}
+        tags: ${{ steps.set_tag.outputs.tag }},${{ steps.sha_short.outputs.sha_short }}
         create_repo: true
         dockerfile: Dockerfile
         
@@ -50,6 +64,6 @@ jobs:
         account_id: ${{ secrets.AWS_ACCOUNT_ID }}
         repo: cdk_laravel/nginx
         region: ${{ secrets.AWS_REGION }}
-        tags: latest,${{ github.sha }}
+        tags: ${{ steps.set_tag.outputs.tag }},${{ steps.sha_short.outputs.sha_short }}
         create_repo: true
         dockerfile: Dockerfile.nginx
