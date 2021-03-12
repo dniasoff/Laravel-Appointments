@@ -10,6 +10,7 @@ use LogicException;
 use PDO;
 use PDOStatement;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CreateDatabaseCommand extends Command
 {
@@ -48,32 +49,45 @@ class CreateDatabaseCommand extends Command
     {
      try{
          $dbname = $this->argument('dbname');
-         $connection = $this->hasArgument('connection') && $this->argument('connection') ? $this->argument('connection'): DB::connection()->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME);
+         $dbhost = env('DB_HOST', '127.0.0.1');
+         $dbuser = env('DB_USERNAME', 'forge');
+         $dbpassword =  env('DB_PASSWORD', '');
 
-         $hasDb = DB::connection($connection)->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = "."'".$dbname."'");
 
-         if(empty($hasDb)) {
-             DB::connection($connection)->select('CREATE DATABASE '. $dbname);
-             $this->info("Database '$dbname' created for '$connection' connection");
-         }
-         else {
-             $this->info("Database $dbname already exists for $connection connection");
-         }
+        
+          // Connect to MySQL
+        $link = mysqli_connect($dbhost, $dbuser, $dbpassword);
+        if (!$link) {
+            die('Could not connect: ' . mysql_error());
+        }
+
+        // Make my_db the current database
+        $db_selected = mysqli_select_db($link, $dbname);
+
+        if ($db_selected) {
+            echo "Database $dbname already exists\n";
+        }
+
+        if (!$db_selected) {
+        // If we couldn't, then it either doesn't exist, or we can't see it.
+        $sql = "CREATE DATABASE $dbname";
+
+        if (mysqli_query( $link, $sql)) {
+            echo "Database $dbname created successfully\n";
+        } else {
+            echo 'Error creating database: ' . mysql_error() . "\n";
+        }
+        }
+
+        mysqli_close($link);
+
+
      }
      catch (\Exception $e){
 
-        try{
-            $dbname = $this->argument('dbname');
-            $connection = $this->hasArgument('connection') && $this->argument('connection') ? $this->argument('connection'): DB::connection()->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME);   
-       
-            DB::connection($connection)->select('CREATE DATABASE '. $dbname);
-            $this->info("Database '$dbname' created for '$connection' connection");
-         
-        }
-        catch (\Exception $e){
-              
+
             $this->error($e->getMessage());
-        }             
+          
      }
    }
 }
