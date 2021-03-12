@@ -14,13 +14,11 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'bin/console' ]; then
         composer install --prefer-dist --no-progress  --no-interaction
     fi
     
-    echo "creating database"
     php artisan make:database $DB_DATABASE
-    echo "database created"
 
     if [ "$(ls -A database/migrations/*.php 2> /dev/null)" ]; then
         echo "Migrations..."
-        php artisan migrate --force
+        php artisan migrate --seed --force || php artisan migrate  --force
     fi
 
     # Queue worker
