@@ -6,7 +6,9 @@ services:
       dockerfile: Dockerfile
     image: laravel
     container_name: laravel-app
-    restart: "no"
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
     depends_on:
       - "db"
     environment:
@@ -16,9 +18,6 @@ services:
       DB_DATABASE: laravel
       DB_USERNAME: root
       DB_PASSWORD: rootpw
-    working_dir: /var/www/
-#    networks:
-#      - laravel
 
   db:
     image: mysql:5.7
@@ -33,15 +32,10 @@ services:
       MYSQL_USER: dbuser
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
-#    networks:
-#      - laravel
 
 
   webserver:
     build:
-      args:
-        user: web
-        uid: 1000
       context: ./
       dockerfile: Dockerfile.nginx
     image: nginx
@@ -50,11 +44,4 @@ services:
     tty: true
     ports:
       - "8000:80"
-    volumes:
-      - ./:/var/www
-#    networks:
-#      - laravel
 
-networks:
-  laravel:
-    driver: bridge

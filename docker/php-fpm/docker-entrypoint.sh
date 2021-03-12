@@ -11,7 +11,7 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'bin/console' ]; then
     php artisan make:database $DB_DATABASE
 
     if [ "$APP_ENV" != 'prod' ]; then
-        composer install --prefer-dist --no-progress --no-suggest --no-interaction
+        composer install --prefer-dist --no-progress  --no-interaction
     fi
 
     if [ "$(ls -A database/migrations/*.php 2> /dev/null)" ]; then
