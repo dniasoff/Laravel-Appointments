@@ -8,8 +8,7 @@ fi
 
 if [ "$1" = 'php-fpm' ] || [ "$1" = 'bin/console' ]; then
     mkdir -p storage/logs
-	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX storage bootstrap/cache
-	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX storage bootstrap/cache
+    php artisan make:database $DB_DATABASE
 
     if [ "$APP_ENV" != 'prod' ]; then
         composer install --prefer-dist --no-progress --no-suggest --no-interaction
