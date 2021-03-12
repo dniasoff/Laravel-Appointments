@@ -30,7 +30,7 @@ jobs:
     - name: Extract tag name
       shell: bash
       run: |
-        BRANCH=echo ${GITHUB_REF#refs/heads/}
+        BRANCH=$(echo ${GITHUB_REF#refs/heads/})
         if [ "$BRANCH" = "master" ]; then
           echo "##[set-output name=tag;]$(echo "lastest")"
         else
