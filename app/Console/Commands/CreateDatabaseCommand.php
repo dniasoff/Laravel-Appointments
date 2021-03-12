@@ -61,7 +61,19 @@ class CreateDatabaseCommand extends Command
          }
      }
      catch (\Exception $e){
-         $this->error($e->getMessage());
+
+        try{
+            $dbname = $this->argument('dbname');
+            $connection = $this->hasArgument('connection') && $this->argument('connection') ? $this->argument('connection'): DB::connection()->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME);   
+       
+            DB::connection($connection)->select('CREATE DATABASE '. $dbname);
+            $this->info("Database '$dbname' created for '$connection' connection");
+         
+        }
+        catch (\Exception $e){
+              
+            $this->error($e->getMessage());
+        }             
      }
    }
 }
