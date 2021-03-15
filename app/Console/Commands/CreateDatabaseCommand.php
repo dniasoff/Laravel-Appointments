@@ -58,7 +58,7 @@ class CreateDatabaseCommand extends Command
           // Connect to MySQL
         $link = mysqli_connect($dbhost, $dbuser, $dbpassword);
         if (!$link) {
-            die('Could not connect: ' . mysqli_error());
+            die('Could not connect: ' . mysqli_error($link));
         }
 
         // Make my_db the current database
@@ -75,7 +75,7 @@ class CreateDatabaseCommand extends Command
         if (mysqli_query( $link, $sql)) {
             echo "Database $dbname created successfully\n";
         } else {
-            echo 'Error creating database: ' . mysqli_error() . "\n";
+            echo 'Error creating database: ' . mysqli_error($link) . "\n";
         }
         }
 
