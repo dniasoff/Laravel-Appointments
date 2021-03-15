@@ -14,7 +14,7 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'bin/console' ]; then
         composer install --prefer-dist --no-progress  --no-interaction
     fi
     
-    php artisan make:database $DB_DATABASE
+    php artisan make:database 
 
     if [ "$(ls -A database/migrations/*.php 2> /dev/null)" ]; then
         echo "Migrations..."

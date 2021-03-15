@@ -20,7 +20,7 @@ class CreateDatabaseCommand extends Command
      * @var string
      */
 
-     Protected $signature = 'make:database {dbname} {connection?}';
+     Protected $signature = 'make:database';
 
 
     /**
@@ -48,7 +48,7 @@ class CreateDatabaseCommand extends Command
     public function handle()
     {
      try{
-         $dbname = $this->argument('dbname');
+         $dbname = env('DB_DATABASE', 'laravel');
          $dbhost = env('DB_HOST', '127.0.0.1');
          $dbuser = env('DB_USERNAME', 'forge');
          $dbpassword =  env('DB_PASSWORD', '');
