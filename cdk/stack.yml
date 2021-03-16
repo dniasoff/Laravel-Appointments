@@ -1,0 +1,995 @@
+Resources:
+  laraveldemostaticcontentproductionFAB2CE06:
+    Type: AWS::S3::Bucket
+    Properties:
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      WebsiteConfiguration:
+        ErrorDocument: error.html
+        IndexDocument: index.html
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravel-demo-static-content-production/Resource
+  laraveldemostaticcontentproductionPolicy3670FDCA:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: laraveldemostaticcontentproductionFAB2CE06
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Allow
+            Principal: "*"
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - laraveldemostaticcontentproductionFAB2CE06
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravel-demo-static-content-production/Policy/Resource
+  SiteDistributionCFDistribution209CF7F5:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - production-static.kodespace.co.uk
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          TargetOriginId: origin1
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - ConnectionAttempts: 3
+            ConnectionTimeout: 10
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginKeepaliveTimeout: 5
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 30
+              OriginSSLProtocols:
+                - TLSv1.2
+            DomainName:
+              Fn::Select:
+                - 2
+                - Fn::Split:
+                    - /
+                    - Fn::GetAtt:
+                        - laraveldemostaticcontentproductionFAB2CE06
+                        - WebsiteURL
+            Id: origin1
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn:
+            Fn::ImportValue: laravel-demo-vpc:ExportsOutputFnGetAttSiteCertificateCertificateRequestorResource6021082AArn67FD365D
+          MinimumProtocolVersion: TLSv1.1_2016
+          SslSupportMethod: sni-only
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/SiteDistribution/CFDistribution
+  SiteAliasRecord3C0AF5BF:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: production-static.kodespace.co.uk.
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+            - SiteDistributionCFDistribution209CF7F5
+            - DomainName
+        HostedZoneId:
+          Fn::FindInMap:
+            - AWSCloudFrontPartitionHostedZoneIdMap
+            - Ref: AWS::Partition
+            - zoneId
+      HostedZoneId: Z016552312S0N2LCUKQCF
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/SiteAliasRecord/Resource
+  FargateCluster955EED67:
+    Type: AWS::ECS::Cluster
+    Properties:
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/Fargate Cluster/Resource
+  clusterNameB220FB68:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Ref: FargateCluster955EED67
+      Name: /laravel-demo/production/clusterName
+      Tags:
+        branch: master
+        service: laravel-demo
+        stack_type: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/clusterName/Resource
+  DnsNamespaceE8F044C2:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: http-api.local
+      Vpc:
+        Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcD90D1D43F0199DB5
+      Description: Private DnsNamespace for Microservices
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/DnsNamespace/Resource
+  ecsTaskExecutionRole34F54B99:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/ecsTaskExecutionRole/Resource
+  ecsTaskExecutionRoleArn8D424356:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Fn::GetAtt:
+          - ecsTaskExecutionRole34F54B99
+          - Arn
+      Name: /laravel-demo/production/ecsTaskExecutionRoleArn
+      Tags:
+        branch: master
+        service: laravel-demo
+        stack_type: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/ecsTaskExecutionRoleArn/Resource
+  laravelTaskDef9B0924CC:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - DependsOn:
+            - Condition: START
+              ContainerName: laravelServiceContainer
+          Essential: true
+          Image:
+            Fn::Join:
+              - ""
+              - - Ref: AWS::AccountId
+                - .dkr.ecr.
+                - Ref: AWS::Region
+                - "."
+                - Ref: AWS::URLSuffix
+                - /cdk_laravel/nginx:latest
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: nginxServiceLogGroupB4B3D26C
+              awslogs-stream-prefix: nginxService
+              awslogs-region:
+                Ref: AWS::Region
+          Name: nginxServiceContainer
+          PortMappings:
+            - ContainerPort: 80
+              Protocol: tcp
+        - Environment:
+            - Name: APP_NAME
+              Value: laravel
+            - Name: APP_KEY
+              Value: base64:SRLF3MRn3osyurFAVuqDgl82xznZk+y9TfFebyUALEY=
+            - Name: APP_DEBUG
+              Value: "true"
+            - Name: DB_CONNECTION
+              Value: mysql
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: laravel-demo-rds-prod:ExportsOutputFnGetAttlaraveldemordsproddbclusterF7758E8AEndpointAddress9061C29D
+            - Name: DB_PORT
+              Value: "3306"
+            - Name: DB_DATABASE
+              Value: laravel_production
+            - Name: DB_USERNAME
+              Value: admin
+            - Name: DB_PASSWORD
+              Value:
+                Fn::Join:
+                  - ""
+                  - - "{{resolve:secretsmanager:"
+                    - Fn::ImportValue: laravel-demo-rds-prod:ExportsOutputReflaraveldemordsproddbclusterSecretAttachment6180E7E5F99B0069
+                    - :SecretString:password::}}
+            - Name: REDIS_HOST
+              Value:
+                Fn::ImportValue: laravel-demo-cache-prod:ExportsOutputFnGetAttlaraveldemocacheprodclusterRedisEndpointAddress73ECA523
+            - Name: REDIS_DB
+              Value: "0"
+          Essential: true
+          Image:
+            Fn::Join:
+              - ""
+              - - Ref: AWS::AccountId
+                - .dkr.ecr.
+                - Ref: AWS::Region
+                - "."
+                - Ref: AWS::URLSuffix
+                - /cdk_laravel/laravel:latest
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: laravelServiceLogGroup6D18D8A9
+              awslogs-stream-prefix: laravelService
+              awslogs-region:
+                Ref: AWS::Region
+          Name: laravelServiceContainer
+          PortMappings:
+            - ContainerPort: 9000
+              Protocol: tcp
+      Cpu: "256"
+      ExecutionRoleArn:
+        Fn::GetAtt:
+          - laravelTaskDefExecutionRoleE5E3154E
+          - Arn
+      Family: laraveldemoservicemasterlaravelTaskDef3FA03AF9
+      Memory: "512"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      TaskRoleArn:
+        Fn::GetAtt:
+          - ecsTaskExecutionRole34F54B99
+          - Arn
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelTaskDef/Resource
+  laravelTaskDefExecutionRoleE5E3154E:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelTaskDef/ExecutionRole/Resource
+  laravelTaskDefExecutionRoleDefaultPolicy010FF438:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":ecr:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :repository/cdk_laravel/nginx
+          - Action: ecr:GetAuthorizationToken
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - nginxServiceLogGroupB4B3D26C
+                - Arn
+          - Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":ecr:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :repository/cdk_laravel/laravel
+          - Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - laravelServiceLogGroup6D18D8A9
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: laravelTaskDefExecutionRoleDefaultPolicy010FF438
+      Roles:
+        - Ref: laravelTaskDefExecutionRoleE5E3154E
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelTaskDef/ExecutionRole/DefaultPolicy/Resource
+  nginxServiceLogGroupB4B3D26C:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/nginxService
+      RetentionInDays: 731
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/nginxServiceLogGroup/Resource
+  laravelServiceLogGroup6D18D8A9:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/laravelService
+      RetentionInDays: 731
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelServiceLogGroup/Resource
+  laravelServiceSecurityGroupD5E7525B:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: laravel-demo-service-master/laravelServiceSecurityGroup
+      GroupName: laravelServiceSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      VpcId:
+        Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcD90D1D43F0199DB5
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelServiceSecurityGroup/Resource
+  laravelServiceSecurityGroupfromlaraveldemoservicemasterhttpapiInternalALBSecurityGroupA4E64AFE802DB12290:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: Load balancer to target
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+          - laravelServiceSecurityGroupD5E7525B
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - httpapiInternalALBSecurityGroup65B6A92E
+          - GroupId
+      ToPort: 80
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelServiceSecurityGroup/from laraveldemoservicemasterhttpapiInternalALBSecurityGroupA4E64AFE:80
+  laravelServiceSecurityGroupfromlaraveldemoservicemasteralbServiceSecurityGroup5506F22980F8918595:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: Load balancer to target
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+          - laravelServiceSecurityGroupD5E7525B
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - albServiceSecurityGroupE08373D7
+          - GroupId
+      ToPort: 80
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelServiceSecurityGroup/from laraveldemoservicemasteralbServiceSecurityGroup5506F229:80
+  laravelSecurityGroupAE547D75:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: laraveldemoservicemasterlaravelServiceSecurityGroup1CB140EE
+      Name: /laravel-demo/production/laravelSecurityGroup
+      Tags:
+        branch: master
+        service: laravel-demo
+        stack_type: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelSecurityGroup/Resource
+  laravelService5A497BF3:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Ref: FargateCluster955EED67
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      DeploymentController:
+        Type: CODE_DEPLOY
+      DesiredCount: 2
+      EnableECSManagedTags: false
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: nginxServiceContainer
+          ContainerPort: 80
+          TargetGroupArn:
+            Ref: nginxServiceTargetGroup1DF478BA1
+        - ContainerName: nginxServiceContainer
+          ContainerPort: 80
+          TargetGroupArn:
+            Ref: nginxServiceTargetGroup2C97A7178
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::GetAtt:
+                - laravelServiceSecurityGroupD5E7525B
+                - GroupId
+          Subnets:
+            - Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcPrivateSubnet1SubnetE912F18CA702CED7
+            - Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcPrivateSubnet2SubnetB4B0E3B9E9A9AE2D
+      ServiceRegistries:
+        - RegistryArn:
+            Fn::GetAtt:
+              - laravelServiceCloudmapServiceCAE3C038
+              - Arn
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      TaskDefinition:
+        Ref: laravelTaskDef9B0924CC
+    DependsOn:
+      - httpapiInternalALBhttpsapiListener00C7C8A5
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelService/Service
+  laravelServiceCloudmapServiceCAE3C038:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      DnsConfig:
+        DnsRecords:
+          - TTL: 60
+            Type: A
+        NamespaceId:
+          Fn::GetAtt:
+            - DnsNamespaceE8F044C2
+            - Id
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: laravelService
+      NamespaceId:
+        Fn::GetAtt:
+          - DnsNamespaceE8F044C2
+          - Id
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelService/CloudmapService/Resource
+  laravelServiceArn6F28DCC4:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Ref: laravelService5A497BF3
+      Name: /laravel-demo/production/laravelServiceArn
+      Tags:
+        branch: master
+        service: laravel-demo
+        stack_type: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/laravelServiceArn/Resource
+  albServiceSecurityGroupE08373D7:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: laravel-demo-service-master/albServiceSecurityGroup
+      GroupName: laravelAlbSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:443
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      VpcId:
+        Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcD90D1D43F0199DB5
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/albServiceSecurityGroup/Resource
+  httpapiInternalALB0B72E2FE:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: "false"
+      Scheme: internet-facing
+      SecurityGroups:
+        - Fn::GetAtt:
+            - httpapiInternalALBSecurityGroup65B6A92E
+            - GroupId
+        - Fn::GetAtt:
+            - albServiceSecurityGroupE08373D7
+            - GroupId
+      Subnets:
+        - Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcPublicSubnet1Subnet1B8207B187614F0C
+        - Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcPublicSubnet2SubnetEE1B34FFE5748C15
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      Type: application
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/httpapiInternalALB/Resource
+  httpapiInternalALBSecurityGroup65B6A92E:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Automatically created Security Group for ELB laraveldemoservicemasterhttpapiInternalALBD351F4C4
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow from anyone on port 80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: Allow from anyone on port 443
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      VpcId:
+        Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcD90D1D43F0199DB5
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/httpapiInternalALB/SecurityGroup/Resource
+  httpapiInternalALBSecurityGrouptolaraveldemoservicemasterlaravelServiceSecurityGroup1CB140EE8091EC6FC7:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId:
+        Fn::GetAtt:
+          - httpapiInternalALBSecurityGroup65B6A92E
+          - GroupId
+      IpProtocol: tcp
+      Description: Load balancer to target
+      DestinationSecurityGroupId:
+        Fn::GetAtt:
+          - laravelServiceSecurityGroupD5E7525B
+          - GroupId
+      FromPort: 80
+      ToPort: 80
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/httpapiInternalALB/SecurityGroup/to laraveldemoservicemasterlaravelServiceSecurityGroup1CB140EE:80
+  httpapiInternalALBRedirect80To443F1851F11:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - RedirectConfig:
+            Port: "443"
+            Protocol: HTTPS
+            StatusCode: HTTP_301
+          Type: redirect
+      LoadBalancerArn:
+        Ref: httpapiInternalALB0B72E2FE
+      Port: 80
+      Protocol: HTTP
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/httpapiInternalALB/Redirect80To443/Resource
+  httpapiInternalALBhttpsapiListener00C7C8A5:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - ForwardConfig:
+            TargetGroupStickinessConfig:
+              DurationSeconds: 3600
+              Enabled: true
+            TargetGroups:
+              - TargetGroupArn:
+                  Ref: nginxServiceTargetGroup1DF478BA1
+                Weight: 50
+              - TargetGroupArn:
+                  Ref: nginxServiceTargetGroup2C97A7178
+                Weight: 50
+          Type: forward
+      LoadBalancerArn:
+        Ref: httpapiInternalALB0B72E2FE
+      Certificates:
+        - CertificateArn:
+            Fn::GetAtt:
+              - albSiteCertificateCertificateRequestorResource5E725017
+              - Arn
+      Port: 443
+      Protocol: HTTPS
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/httpapiInternalALB/httpsapiListener/Resource
+  albSiteCertificateCertificateRequestorFunctionServiceRoleBDFF1621:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/albSiteCertificate/CertificateRequestorFunction/ServiceRole/Resource
+  albSiteCertificateCertificateRequestorFunctionServiceRoleDefaultPolicy923332B2:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - acm:RequestCertificate
+              - acm:DescribeCertificate
+              - acm:DeleteCertificate
+            Effect: Allow
+            Resource: "*"
+          - Action: route53:GetChange
+            Effect: Allow
+            Resource: "*"
+          - Action: route53:changeResourceRecordSets
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - :route53:::hostedzone/Z016552312S0N2LCUKQCF
+        Version: "2012-10-17"
+      PolicyName: albSiteCertificateCertificateRequestorFunctionServiceRoleDefaultPolicy923332B2
+      Roles:
+        - Ref: albSiteCertificateCertificateRequestorFunctionServiceRoleBDFF1621
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/albSiteCertificate/CertificateRequestorFunction/ServiceRole/DefaultPolicy/Resource
+  albSiteCertificateCertificateRequestorFunction5F9AE770:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: AssetParameters19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2S3BucketFCCD3A76
+        S3Key:
+          Fn::Join:
+            - ""
+            - - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                      - "||"
+                      - Ref: AssetParameters19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2S3VersionKey07AF06B6
+              - Fn::Select:
+                  - 1
+                  - Fn::Split:
+                      - "||"
+                      - Ref: AssetParameters19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2S3VersionKey07AF06B6
+      Role:
+        Fn::GetAtt:
+          - albSiteCertificateCertificateRequestorFunctionServiceRoleBDFF1621
+          - Arn
+      Handler: index.certificateRequestHandler
+      Runtime: nodejs10.x
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      Timeout: 900
+    DependsOn:
+      - albSiteCertificateCertificateRequestorFunctionServiceRoleDefaultPolicy923332B2
+      - albSiteCertificateCertificateRequestorFunctionServiceRoleBDFF1621
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/albSiteCertificate/CertificateRequestorFunction/Resource
+      aws:asset:path: asset.19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2
+      aws:asset:property: Code
+  albSiteCertificateCertificateRequestorResource5E725017:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - albSiteCertificateCertificateRequestorFunction5F9AE770
+          - Arn
+      DomainName: kodespace.co.uk
+      SubjectAlternativeNames:
+        - "*.kodespace.co.uk"
+      HostedZoneId: Z016552312S0N2LCUKQCF
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/albSiteCertificate/CertificateRequestorResource/Default
+  nginxServiceTargetGroup1DF478BA1:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /login
+      HealthCheckTimeoutSeconds: 3
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: "true"
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: "86500"
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcD90D1D43F0199DB5
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/nginxServiceTargetGroup1/Resource
+  nginxServiceTargetGroup2C97A7178:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /login
+      HealthCheckTimeoutSeconds: 3
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: branch
+          Value: master
+        - Key: service
+          Value: laravel-demo
+        - Key: stack_type
+          Value: cdk
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: "true"
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: "86500"
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: laravel-demo-vpc:ExportsOutputReflaraveldemovpcvpcD90D1D43F0199DB5
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/nginxServiceTargetGroup2/Resource
+  AlbAliasRecord34710EAC:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: www.kodespace.co.uk.
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::Join:
+            - ""
+            - - dualstack.
+              - Fn::GetAtt:
+                  - httpapiInternalALB0B72E2FE
+                  - DNSName
+        HostedZoneId:
+          Fn::GetAtt:
+            - httpapiInternalALB0B72E2FE
+            - CanonicalHostedZoneID
+      HostedZoneId: Z016552312S0N2LCUKQCF
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/AlbAliasRecord/Resource
+  AlbAliasRecord2076C4279:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: kodespace.co.uk.
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::Join:
+            - ""
+            - - dualstack.
+              - Fn::GetAtt:
+                  - httpapiInternalALB0B72E2FE
+                  - DNSName
+        HostedZoneId:
+          Fn::GetAtt:
+            - httpapiInternalALB0B72E2FE
+            - CanonicalHostedZoneID
+      HostedZoneId: Z016552312S0N2LCUKQCF
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/AlbAliasRecord2/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAAE31TwW7bMAz9lt0VdVnQw25LnGUY0A2BU2xnRmYMNrZkiJKHwPC/j4rtxO2KnfT4+ERST9JSf17pjx++wB9emOL80BnnUXeHAOasMmc5+GiCypFd9AZVdrI/oGnIlmrNjEGEZQqyyMHVc9kc78FDjQF9CqRqQYGc7VXq2vFKd5tozhhSdkTDsncVmcudHuJemcrF4uSdDbrLEt4l/BuPW5KB6RhT+bRtHvfKuxjwUdqtc5RzFsOYCR0w9AoNp3JyknHQEe7AlxDwGfi8xRNZmqq/ZWQGIIt+xo17D+hbGrwYYa+Y62S0F/te+XMLRDJoC2LjWvQX3e09tVJva/mniLiB0eB36Pd6EkjP3FXDDaX1bvFkbuVK8eHJld/EryZlJpws8jrHxjEF5y8bYBTqkxwDTfQULrct/ye+29Ij8z/81ystbSrgQHLLUByhAmvEo1barJtGZoTk7JPkNtfc4NqreK6TF4B21Ex4ln+WC8JwG3MWyjNDH+iUhFiDhRK9Fod/QUWFUEV2T6sK6mMButtFa6bnMWG5x9UC0m9hff00fa+sK1C/8EO7fNTLpfzAFyZa+GgD1ajzYf0LIIJAr50DAAA=
+    Metadata:
+      aws:cdk:path: laravel-demo-service-master/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Mappings:
+  AWSCloudFrontPartitionHostedZoneIdMap:
+    aws:
+      zoneId: Z2FDTNDATAQYW2
+    aws-cn:
+      zoneId: Z3RFFRIM2A3IF5
+Parameters:
+  AssetParameters19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2S3BucketFCCD3A76:
+    Type: String
+    Description: S3 bucket for asset "19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2"
+  AssetParameters19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2S3VersionKey07AF06B6:
+    Type: String
+    Description: S3 key for asset version "19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2"
+  AssetParameters19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2ArtifactHash652C125C:
+    Type: String
+    Description: Artifact hash for asset "19e461d2ff1a5b90438fed6ceee4c197d7efee8712a6f76d85b501ab20bfb1a2"
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+
