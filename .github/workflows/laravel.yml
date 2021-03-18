@@ -67,3 +67,16 @@ jobs:
         tags: ${{ steps.set_tag.outputs.tag }},${{ steps.sha_short.outputs.sha_short }}
         create_repo: true
         dockerfile: Dockerfile.nginx
+
+    - name: Emit repository_dispatch
+        uses: mvasigh/dispatch-action@main
+        with:
+          # You should create a personal access token and store it in your repository
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repo: cdk_laravel
+          owner: dniasoff
+          event_type: ecr_repo_update
+          message: |
+            {
+              "CDK_IMAGE_TAG": "${{ steps.sha_short.outputs.sha_short }}"
+            }
