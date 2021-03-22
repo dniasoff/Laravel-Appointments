@@ -20,7 +20,7 @@ class CreateDatabaseCommand extends Command
      * @var string
      */
 
-     Protected $signature = 'make:database {dbname} {connection?}';
+     Protected $signature = 'make:database';
 
 
     /**
@@ -48,7 +48,7 @@ class CreateDatabaseCommand extends Command
     public function handle()
     {
      try{
-         $dbname = $this->argument('dbname');
+         $dbname = env('DB_DATABASE', 'laravel');
          $dbhost = env('DB_HOST', '127.0.0.1');
          $dbuser = env('DB_USERNAME', 'forge');
          $dbpassword =  env('DB_PASSWORD', '');
@@ -58,7 +58,7 @@ class CreateDatabaseCommand extends Command
           // Connect to MySQL
         $link = mysqli_connect($dbhost, $dbuser, $dbpassword);
         if (!$link) {
-            die('Could not connect: ' . mysql_error());
+            die('Could not connect: ' . mysqli_error($link));
         }
 
         // Make my_db the current database
@@ -75,7 +75,7 @@ class CreateDatabaseCommand extends Command
         if (mysqli_query( $link, $sql)) {
             echo "Database $dbname created successfully\n";
         } else {
-            echo 'Error creating database: ' . mysql_error() . "\n";
+            echo 'Error creating database: ' . mysqli_error($link) . "\n";
         }
         }
 
